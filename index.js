@@ -80,7 +80,7 @@ app.post('/members/search', (req, res) => {
   let eMail = req.body.email;
 
   console.log("Search user based on email:", eMail);
-  let single_user_qr = `select id from members where email = '${eMail}'`;
+  let single_user_qr = `select id from members where email = '${eMail}' || mobile LIKE '%${eMail}%'`;
   db.query(single_user_qr, (err, result) => {
 
     if (err) {
@@ -179,13 +179,10 @@ app.post('/profile', (req, res) => {
   let femaleChildren = req.body.femaleChildren;
   let notes = req.body.notes;
 
-  console.log("Create members:", firstName, lastName);
-
-
- 
+  console.log("Create members:", firstName, lastName); 
   console.log("User tries to search for phone: ", mobileNo);
   // checkemailid
-  let chkmobile = `select * from members where mobile = '${mobileNo}'`;
+  let chkmobile = `select * from members where mobile LIKE '%${mobileNo}%'`;
   db.query(chkmobile, async (err, result) => {
     if (err) throw err;
   
@@ -198,8 +195,8 @@ app.post('/profile', (req, res) => {
     else {
 
       let insert_qr = `insert into members (firstname, lastname, address, unit, department, mobile, smobile, landcode, landline, email, dob, spouse, sdob, male, female, notes) values ('${firstName}', '${lastName}', '${address}',
-    '${associationUnit}', '${department}', '${mobileNo}', '${smobileNo}', '${landlineCode}', '${landlineNo}', '${email}', '${dateOfBirth}', '${spouseName}', '${spouseDOB}', '${maleChildren}',
-    '${femaleChildren}', '${notes}')`;
+    '${associationUnit}', '${department}', '${mobileNo}', '${smobileNo}', '${landlineCode}', '${landlineNo}', '${email}', ${dateOfBirth}, '${spouseName}', ${spouseDOB}, ${maleChildren},
+    ${femaleChildren}, '${notes}')`;
 
       db.query(insert_qr, (err, result) => {
 
@@ -248,7 +245,6 @@ app.post('/basicProfile', (req, res) => {
 
 // Update member data
 app.put('/profile/:id', (req, res) => {
-
   let gID = req.params.id;
   let firstName = req.body.firstName;
   let lastName = req.body.lastName;
@@ -268,8 +264,8 @@ app.put('/profile/:id', (req, res) => {
   let notes = req.body.notes;
 
   console.log("Update member based on his ID", gID, firstName, lastName);
-  let update_qr = `update members set firstname = '${firstName}', lastname = '${lastName}', address = '${address}',    unit = '${associationUnit}', department = '${department}', mobile = '${mobileNo}', smobile = '${smobileNo}', landcode = '${landlineCode}', landline = '${landlineNo}', email = '${email}', dob = '${dateOfBirth}',  spouse = '${spouseName}', sdob = '${spouseDOB}', male = '${maleChildren}', female = '${femaleChildren}', notes = '${notes}' where id =${gID}`;
-
+  let update_qr = `update members set firstname = '${firstName}', lastname = '${lastName}', address = '${address}',    unit = '${associationUnit}', department = '${department}', mobile = '${mobileNo}', smobile = '${smobileNo}', landcode = '${landlineCode}', landline = '${landlineNo}', email = '${email}', dob = ${dateOfBirth},  spouse = '${spouseName}', sdob = ${spouseDOB}, male = ${maleChildren}, female = ${femaleChildren}, notes = '${notes}' where id =${gID}`;
+  
   db.query(update_qr, (err, result) => {
 
     if (err) {
@@ -298,7 +294,7 @@ app.delete('/profile/:id', (req, res) => {
     if (err) {
       console.log(err, 'err')
     }
-    // console.log(result);
+   
     let data = result;
 
     let qr = `delete from members where id = '${qID}'`;
@@ -350,15 +346,15 @@ app.post('/login', (req, res) => {
   let password = req.body.password;
   console.log("User tries to login with email/phone: ", email);
   // checkemailid
-  let chkemailid = `select * from users where email = '${email}' OR phone = '${email}'`;
+  let chkemailid = `select * from users where email = '${email}' OR phone LIKE '%${email}%'`;
   db.query(chkemailid, async (err, result) => {
     if (err) throw err;
-    // console.log(result, "#result");
-    
+       
     if (result.length > 0) {
       let data = {
         name: result[0].name,
         email: result[0].email,
+        phone: result[0].phone
       };
       console.log("User details present, checking for password");
       //    check password
@@ -383,7 +379,7 @@ app.post('/login', (req, res) => {
     } else {
       res.send({
         status: false,
-        msg: "Invalid Email ID",
+        msg: "Invalid Email ID or Phone number",
       });
     }
   });
@@ -398,7 +394,7 @@ app.put("/reset-password", (req, res) => {
 
   console.log("User updating the password for user with email:", email);
   //Validate the old password
-  let chk_email_mob_query = `select * from users where email = '${email}' || phone = '${email}'`;
+  let chk_email_mob_query = `select * from users where email = '${email}' || phone LIKE '%${email}%'`;
   db.query(chk_email_mob_query, async (err, result) => {
     if (err) throw err;
     // console.log(result, "#result");
@@ -460,7 +456,7 @@ app.put("/reset", (req, res) => {
   let password = req.body.password;
 
   // first check email id already exit
-  let namechkqry = `select * from users where email = '${email}' || phone ='${phone}' `;
+  let namechkqry = `select * from users where email = '${email}' || phone LIKE '%${phone}%' `;
   console.log("Admin resetting password for email and phone:", email, phone);
   db.query(namechkqry, async (err, result) => {
 
@@ -471,7 +467,7 @@ app.put("/reset", (req, res) => {
       decryptpwd = await bcrypt.hash(password, 10);
       // update users data
       console.log("Update users with default password");
-      let updateqry = `update users set password = '${decryptpwd}' where phone ='${phone}' `;
+      let updateqry = `update users set password = '${decryptpwd}' where phone = '${phone}' `;
       // console.log(updateqry);
       db.query(updateqry, (err, result) => {
         if (err) throw err;
